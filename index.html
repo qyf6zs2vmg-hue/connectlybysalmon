@@ -3,22 +3,35 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Connectly App | Developed by Salmon Davronov</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- PeerJS for Real P2P Signaling -->
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <style>
     body {
       font-family: 'Inter', sans-serif;
-      background-color: #f8fafc;
+      background-color: #0f172a; /* Darker background for video-first feel */
       margin: 0;
       padding: 0;
+      overflow: hidden;
     }
-    /* Hide scrollbars for a cleaner PWA look */
+    /* Smooth Transitions */
+    .video-fade-enter { opacity: 0; }
+    .video-fade-enter-active { opacity: 1; transition: opacity 500ms ease-in; }
+    
+    /* Hide scrollbars */
     ::-webkit-scrollbar {
       width: 0px;
       background: transparent;
+    }
+    
+    /* Mobile-specific height fix */
+    .h-screen-safe {
+      height: 100vh;
+      height: -webkit-fill-available;
     }
   </style>
 <script type="importmap">
@@ -34,7 +47,6 @@
 </head>
 <body>
   <div id="root"></div>
-  <!-- IMPORTANT: This script tag is required to load the app! -->
   <script type="module" src="./index.tsx"></script>
 </body>
 </html>

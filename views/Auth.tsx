@@ -17,19 +17,19 @@ const Auth: React.FC<AuthProps> = ({ onRegister, t }) => {
   };
 
   return (
-    <div className="min-h-screen bg-indigo-50 flex items-center justify-center p-4 md:p-6">
+    <div className="min-h-screen bg-indigo-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8 md:mb-10">
-          <div className="w-14 h-14 md:w-16 md:h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white mx-auto mb-4 md:mb-6 shadow-xl shadow-indigo-200">
+        <div className="text-center mb-6 md:mb-10">
+          <div className="w-14 h-14 md:w-16 md:h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white mx-auto mb-4 shadow-xl shadow-indigo-200">
             <i className="fa-solid fa-link text-2xl md:text-3xl"></i>
           </div>
           <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight mb-2">{t.authTitle}</h1>
           <p className="text-slate-500 font-medium text-sm md:text-base">{t.authSubtitle}</p>
         </div>
 
-        <div className="bg-white p-6 md:p-10 rounded-[2rem] md:rounded-[2.5rem] shadow-2xl shadow-indigo-100/50 border border-slate-100">
+        <div className="bg-white p-6 md:p-10 rounded-[2.5rem] shadow-2xl shadow-indigo-100/50 border border-slate-100">
           <h2 className="text-xl md:text-2xl font-bold text-slate-800 mb-2">{t.getStarted}</h2>
-          <p className="text-slate-500 text-xs md:text-sm mb-6 md:mb-8">Enter your display name to receive your unique connection ID.</p>
+          <p className="text-slate-500 text-xs md:text-sm mb-6">Enter your display name to receive your unique connection ID.</p>
 
           <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
             <div>
@@ -41,6 +41,7 @@ const Auth: React.FC<AuthProps> = ({ onRegister, t }) => {
                 <input
                   type="text"
                   id="name"
+                  autoComplete="off"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Alex"
@@ -53,7 +54,7 @@ const Auth: React.FC<AuthProps> = ({ onRegister, t }) => {
 
             <button
               type="submit"
-              className="w-full py-3 md:py-4 bg-indigo-600 text-white rounded-2xl font-bold text-base md:text-lg shadow-lg shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all flex items-center justify-center gap-3"
+              className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold text-lg shadow-lg shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all flex items-center justify-center gap-3"
             >
               {t.startConnecting}
               <i className="fa-solid fa-arrow-right"></i>
@@ -75,8 +76,8 @@ const Auth: React.FC<AuthProps> = ({ onRegister, t }) => {
           </div>
         </div>
 
-        <p className="mt-8 text-center text-slate-400 text-[10px] md:text-sm px-4">
-          {t.privacyText}
+        <p className="mt-6 text-center text-slate-400 text-[10px] md:text-xs px-4">
+          Connectly App | Developed by Salmon Davronov
         </p>
       </div>
     </div>
