@@ -75,22 +75,21 @@ const Navigation: React.FC<NavigationProps> = ({ user, onLogout, t }) => {
         </div>
       </aside>
 
-      {/* Mobile Bottom Bar - Optimized for iOS Home Bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-slate-200 flex justify-around items-center h-20 px-4 z-[999] pb-safe">
+      {/* Mobile Bottom Bar - Lowered z-index slightly to let call UI overlap if needed */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-slate-200 flex justify-around items-center h-20 px-2 z-[100] pb-safe">
         {navItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
-            className="no-underline"
+            className="no-underline flex-1"
           >
             {({ isActive }) => (
               <div className={`
-                flex flex-col items-center justify-center gap-1.5 transition-all w-14
-                ${isActive ? 'text-indigo-600 scale-110' : 'text-slate-400'}
+                flex flex-col items-center justify-center gap-1 transition-all
+                ${isActive ? 'text-indigo-600 scale-105' : 'text-slate-400'}
               `}>
-                <div className={`w-8 h-1 rounded-full mb-1 transition-all ${isActive ? 'bg-indigo-600' : 'bg-transparent'}`}></div>
                 <i className={`fa-solid ${item.icon} text-lg`}></i>
-                <span className="text-[8px] font-black uppercase tracking-widest truncate">{item.label}</span>
+                <span className="text-[7px] font-black uppercase tracking-tighter truncate">{item.label}</span>
               </div>
             )}
           </NavLink>
