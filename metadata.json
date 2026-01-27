@@ -1,0 +1,8 @@
+{
+  "name": "Connectly App",
+  "description": "A modern WebRTC-based video chat application featuring 4-digit ID connections, a secure help center, and personalized profiles.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
