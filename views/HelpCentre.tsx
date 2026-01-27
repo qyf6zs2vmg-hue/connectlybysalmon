@@ -30,7 +30,7 @@ const HelpCentre: React.FC<{ t: any }> = ({ t }) => {
   ];
 
   return (
-    <div className="p-6 md:p-8 max-w-5xl mx-auto">
+    <div className="p-6 md:p-8 max-w-5xl mx-auto pb-24 md:pb-12">
       <header className="mb-8 md:mb-12 text-center">
         <h1 className="text-3xl md:text-4xl font-black text-slate-800 mb-3">{t.help}</h1>
         <p className="text-slate-500 text-sm md:text-lg">Connectly — Private. Secure. Fast.</p>
@@ -50,6 +50,26 @@ const HelpCentre: React.FC<{ t: any }> = ({ t }) => {
             <p className="text-sm md:text-base text-slate-600 leading-relaxed">{card.desc}</p>
           </div>
         ))}
+      </div>
+
+      <div className="bg-indigo-600 rounded-[2rem] p-8 md:p-12 text-white mb-12 shadow-xl shadow-indigo-100">
+         <div className="flex flex-col md:flex-row items-center gap-8">
+            <div className="w-24 h-24 md:w-32 md:h-32 bg-white/20 rounded-3xl flex items-center justify-center backdrop-blur-md border border-white/30">
+               <i className="fa-solid fa-user-gear text-4xl"></i>
+            </div>
+            <div className="text-center md:text-left">
+               <h2 className="text-2xl font-bold mb-2">About the Creator</h2>
+               <p className="text-indigo-100 max-w-lg mb-4">
+                  Connectly was envisioned and developed by <strong>Salmon Davronov</strong>. 
+                  My mission is to create tools that bring people closer together through simplified technology and robust security.
+               </p>
+               <div className="flex flex-wrap justify-center md:justify-start gap-4">
+                  <span className="px-3 py-1 bg-white/10 rounded-lg text-xs font-bold uppercase tracking-widest">Full-Stack Dev</span>
+                  <span className="px-3 py-1 bg-white/10 rounded-lg text-xs font-bold uppercase tracking-widest">UI/UX Designer</span>
+                  <span className="px-3 py-1 bg-white/10 rounded-lg text-xs font-bold uppercase tracking-widest">WebRTC Specialist</span>
+               </div>
+            </div>
+         </div>
       </div>
 
       <section className="bg-slate-900 rounded-[2rem] md:rounded-[3rem] p-8 md:p-16 text-white overflow-hidden relative mb-10">

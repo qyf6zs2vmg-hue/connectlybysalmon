@@ -26,7 +26,10 @@ const Navigation: React.FC<NavigationProps> = ({ user, onLogout, t }) => {
           <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shrink-0 shadow-lg shadow-indigo-100">
             <i className="fa-solid fa-link text-xl"></i>
           </div>
-          <span className="font-bold text-xl text-slate-800 tracking-tight">Connectly</span>
+          <div>
+            <span className="font-bold text-xl text-slate-800 tracking-tight block">Connectly</span>
+            <span className="text-[10px] text-indigo-500 font-bold uppercase tracking-tighter">by Salmon Davronov</span>
+          </div>
         </div>
 
         <nav className="flex-1 px-4 space-y-2 mt-2">
@@ -48,6 +51,13 @@ const Navigation: React.FC<NavigationProps> = ({ user, onLogout, t }) => {
         </nav>
 
         <div className="p-6 border-t border-slate-100">
+          <div className="mb-4 px-2">
+            <div className="p-3 bg-indigo-50 rounded-2xl border border-indigo-100 flex items-center gap-2">
+              <i className="fa-solid fa-code text-indigo-500 text-xs"></i>
+              <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-widest truncate">Salmon Davronov</span>
+            </div>
+          </div>
+          
           <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl mb-4 border border-slate-100">
             <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full object-cover shadow-sm border-2 border-white" />
             <div className="flex-1 min-w-0">
@@ -75,12 +85,12 @@ const Navigation: React.FC<NavigationProps> = ({ user, onLogout, t }) => {
           >
             {({ isActive }) => (
               <div className={`
-                flex flex-col items-center justify-center gap-1.5 transition-all w-16
+                flex flex-col items-center justify-center gap-1.5 transition-all w-14
                 ${isActive ? 'text-indigo-600 scale-110' : 'text-slate-400'}
               `}>
-                <div className={`w-10 h-1 rounded-full mb-1 transition-all ${isActive ? 'bg-indigo-600' : 'bg-transparent'}`}></div>
+                <div className={`w-8 h-1 rounded-full mb-1 transition-all ${isActive ? 'bg-indigo-600' : 'bg-transparent'}`}></div>
                 <i className={`fa-solid ${item.icon} text-lg`}></i>
-                <span className="text-[9px] font-black uppercase tracking-widest">{item.label}</span>
+                <span className="text-[8px] font-black uppercase tracking-widest truncate">{item.label}</span>
               </div>
             )}
           </NavLink>

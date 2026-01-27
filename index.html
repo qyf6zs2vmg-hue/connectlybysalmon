@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Connectly App</title>
+  <title>Connectly App | Developed by Salmon Davronov</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -12,6 +12,13 @@
     body {
       font-family: 'Inter', sans-serif;
       background-color: #f8fafc;
+      margin: 0;
+      padding: 0;
+    }
+    /* Hide scrollbars for a cleaner PWA look */
+    ::-webkit-scrollbar {
+      width: 0px;
+      background: transparent;
     }
   </style>
 <script type="importmap">
@@ -27,5 +34,7 @@
 </head>
 <body>
   <div id="root"></div>
+  <!-- IMPORTANT: This script tag is required to load the app! -->
+  <script type="module" src="./index.tsx"></script>
 </body>
 </html>
