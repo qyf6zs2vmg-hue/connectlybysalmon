@@ -18,6 +18,7 @@ const Home: React.FC<HomeProps> = ({ user, t }) => {
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [peerReady, setPeerReady] = useState(false);
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
 
   const location = useLocation();
   const localVideoRef = useRef<HTMLVideoElement>(null);
@@ -26,53 +27,59 @@ const Home: React.FC<HomeProps> = ({ user, t }) => {
   const currentCall = useRef<any>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
 
-  useEffect(() => {
-    // 1. Инициализация Peer
-    const peerId = `connectly_${user.id}`;
-    peerInstance.current = new Peer(peerId, {
-      debug: 1,
-      config: {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' }
-        ]
-      }
-    });
+  // Function to initialize camera and PeerJS
+  const initApp = async () => {
+    try {
+      // 1. Request Camera/Mic Permissions immediately (System Prompt)
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: 'user', 
+          width: { ideal: 1280 }, 
+          height: { ideal: 720 } 
+        }, 
+        audio: { echoCancellation: true, noiseSuppression: true } 
+      });
+      
+      localStreamRef.current = stream;
+      if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+      setHasPermission(true);
 
-    peerInstance.current.on('open', () => setPeerReady(true));
-
-    // 2. Доступ к камере
-    const startCamera = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, 
-          audio: true 
-        });
-        localStreamRef.current = stream;
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = stream;
+      // 2. Setup PeerJS after permission is granted
+      const peerId = `connectly_${user.id}`;
+      peerInstance.current = new Peer(peerId, {
+        config: {
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun3.l.google.com:19302' }
+          ]
         }
-        
-        // Слушаем входящие
-        peerInstance.current.on('call', (call: any) => {
-          setIncomingCaller(call.peer.replace('connectly_', ''));
-          setCallStatus('incoming');
-          currentCall.current = call;
-        });
+      });
 
-      } catch (err) {
-        console.error("Media error:", err);
-        alert("Пожалуйста, разрешите доступ к камере и микрофону");
-      }
-    };
-    startCamera();
+      peerInstance.current.on('open', () => setPeerReady(true));
 
-    // Авто-вызов из контактов
+      // Handle Incoming Calls
+      peerInstance.current.on('call', (call: any) => {
+        setIncomingCaller(call.peer.replace('connectly_', ''));
+        setCallStatus('incoming');
+        currentCall.current = call;
+      });
+
+    } catch (err) {
+      console.error("Permission denied or Camera error:", err);
+      setHasPermission(false);
+    }
+  };
+
+  useEffect(() => {
+    initApp();
+
     if (location.state?.callId) {
       const cid = location.state.callId;
       setTargetId(cid);
-      const timer = setTimeout(() => handleCall(cid), 1500);
-      return () => clearTimeout(timer);
+      const tId = setTimeout(() => handleCall(cid), 1500);
+      return () => clearTimeout(tId);
     }
 
     return () => {
@@ -84,6 +91,8 @@ const Home: React.FC<HomeProps> = ({ user, t }) => {
   const handleCall = (id: string = targetId) => {
     if (!id || id === user.id || !localStreamRef.current || !peerReady) return;
     setCallStatus('calling');
+    
+    // Create the call
     const call = peerInstance.current.call(`connectly_${id}`, localStreamRef.current);
     setupCallListeners(call);
     currentCall.current = call;
@@ -97,9 +106,7 @@ const Home: React.FC<HomeProps> = ({ user, t }) => {
 
   const setupCallListeners = (call: any) => {
     call.on('stream', (remoteStream: MediaStream) => {
-      if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = remoteStream;
-      }
+      if (remoteVideoRef.current) remoteVideoRef.current.srcObject = remoteStream;
       setCallStatus('connected');
     });
     call.on('close', () => endCall());
@@ -118,52 +125,102 @@ const Home: React.FC<HomeProps> = ({ user, t }) => {
 
   const toggleMute = () => {
     if (localStreamRef.current) {
-      const track = localStreamRef.current.getAudioTracks()[0];
-      track.enabled = isMuted;
-      setIsMuted(!isMuted);
+      const audioTrack = localStreamRef.current.getAudioTracks()[0];
+      if (audioTrack) {
+        audioTrack.enabled = isMuted;
+        setIsMuted(!isMuted);
+      }
     }
   };
 
   const toggleVideo = () => {
     if (localStreamRef.current) {
-      const track = localStreamRef.current.getVideoTracks()[0];
-      track.enabled = isVideoOff;
-      setIsVideoOff(!isVideoOff);
+      const videoTrack = localStreamRef.current.getVideoTracks()[0];
+      if (videoTrack) {
+        videoTrack.enabled = isVideoOff;
+        setIsVideoOff(!isVideoOff);
+      }
     }
   };
 
+  // Permission Guard UI
+  if (hasPermission === false) {
+    return (
+      <div className="h-full bg-white flex flex-col items-center justify-center p-8 text-center">
+        <div className="w-24 h-24 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mb-6">
+          <i className="fa-solid fa-video-slash text-4xl"></i>
+        </div>
+        <h1 className="text-2xl font-black text-slate-800 mb-4">Access Required</h1>
+        <p className="text-slate-500 mb-8 max-w-xs">We need camera and microphone access to enable video calls.</p>
+        <button 
+          onClick={() => window.location.reload()}
+          className="bg-indigo-600 text-white px-8 py-4 rounded-2xl font-bold shadow-xl shadow-indigo-100"
+        >
+          Enable in System Settings
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className="relative h-full bg-slate-950 overflow-hidden flex flex-col">
-      {/* 1. УДАЛЕННОЕ ВИДЕО (СОБЕСЕДНИК) */}
-      <div className="absolute inset-0 z-0 flex items-center justify-center bg-black">
+    <div className="relative h-full bg-white overflow-hidden flex flex-col">
+      {/* REMOTE VIDEO CONTAINER */}
+      <div className={`absolute inset-0 z-0 transition-all duration-700 ${callStatus === 'connected' ? 'bg-black' : 'bg-white'}`}>
         <video 
           ref={remoteVideoRef} 
           autoPlay 
           playsInline 
-          className="w-full h-full object-cover transition-opacity duration-500"
-          style={{ opacity: callStatus === 'connected' ? 1 : 0 }}
+          className={`w-full h-full object-cover transition-opacity duration-700 ${callStatus === 'connected' ? 'opacity-100' : 'opacity-0'}`}
         />
         
-        {/* Экран ожидания/статуса */}
+        {/* Waiting / Idle Screen */}
         {callStatus !== 'connected' && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-slate-900/60 backdrop-blur-md">
-            <div className={`w-20 h-20 rounded-3xl flex items-center justify-center mb-6 border border-white/10 ${callStatus === 'calling' ? 'animate-pulse bg-indigo-500/20 text-indigo-400' : 'bg-white/5 text-slate-400'}`}>
-              <i className={`fa-solid ${callStatus === 'calling' ? 'fa-phone-volume' : 'fa-video'} text-3xl`}></i>
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">
+            <div className={`w-32 h-32 rounded-[3rem] flex items-center justify-center mb-10 bg-white border-2 border-slate-100 shadow-2xl ${callStatus === 'calling' ? 'animate-pulse text-indigo-600' : 'text-slate-200'}`}>
+              <i className={`fa-solid ${callStatus === 'calling' ? 'fa-phone-volume' : 'fa-video'} text-5xl`}></i>
             </div>
-            <h2 className="text-2xl font-black text-white mb-2">
+            <h2 className="text-4xl font-black text-slate-800 mb-4 tracking-tight">
               {callStatus === 'calling' ? t.isCalling.replace('{id}', targetId) : 
                callStatus === 'incoming' ? t.isIncoming.replace('{id}', incomingCaller) : 
                t.videoChat}
             </h2>
-            <p className="text-slate-400 text-sm font-medium uppercase tracking-widest opacity-60">
-              {peerReady ? 'Сеть готова' : 'Подключение к серверу...'}
-            </p>
+            <div className="flex items-center gap-3 px-6 py-2.5 bg-indigo-50/50 rounded-full border border-indigo-100 shadow-sm">
+               <div className={`w-2.5 h-2.5 rounded-full ${peerReady ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`}></div>
+               <p className="text-indigo-700 text-xs font-black uppercase tracking-widest">
+                 {peerReady ? 'Server Online' : 'Connecting to Mesh...'}
+               </p>
+            </div>
           </div>
         )}
       </div>
 
-      {/* 2. ВАШЕ ВИДЕО (PIP) - ВСЕГДА В УГЛУ */}
-      <div className="absolute bottom-32 md:bottom-28 right-4 md:right-8 z-40 w-28 md:w-56 aspect-[3/4] rounded-3xl overflow-hidden border-2 border-white/20 shadow-2xl transition-all duration-500 bg-slate-800">
+      {/* TOP BAR: YOUR ID */}
+      <div className="relative z-50 p-6 flex justify-between items-start pointer-events-none">
+        <div 
+          onClick={() => {
+            navigator.clipboard.writeText(user.id);
+            setCopyFeedback(true);
+            setTimeout(() => setCopyFeedback(false), 2000);
+          }}
+          className="pointer-events-auto cursor-pointer bg-white/90 backdrop-blur-2xl border border-slate-200 text-slate-800 px-6 py-4 rounded-[2rem] flex items-center gap-5 hover:border-indigo-400 transition-all shadow-xl active:scale-95"
+        >
+          <div className="flex flex-col">
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500">{t.yourId}</span>
+            <span className="text-2xl font-black tracking-[0.2em] font-mono leading-none">{user.id}</span>
+          </div>
+          <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center">
+            <i className={`fa-solid ${copyFeedback ? 'fa-check text-emerald-500' : 'fa-copy text-indigo-400'}`}></i>
+          </div>
+        </div>
+      </div>
+
+      {/* LOCAL VIDEO (PIP) - REPOSITIONED HIGHER TO AVOID NAV OVERLAP */}
+      <div className={`absolute z-40 transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] overflow-hidden bg-slate-100
+        ${callStatus === 'idle' 
+          ? 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 md:w-96 aspect-[3/4] rounded-[3.5rem] border-[12px] border-white' 
+          : 'bottom-48 right-6 w-32 md:w-56 aspect-[3/4] rounded-3xl border-4 border-white'
+        }`}
+      >
         <video 
           ref={localVideoRef} 
           autoPlay 
@@ -172,107 +229,87 @@ const Home: React.FC<HomeProps> = ({ user, t }) => {
           className={`w-full h-full object-cover scale-x-[-1] transition-opacity ${isVideoOff ? 'opacity-0' : 'opacity-100'}`}
         />
         {isVideoOff && (
-          <div className="absolute inset-0 flex items-center justify-center text-slate-500">
-            <i className="fa-solid fa-video-slash text-2xl"></i>
+          <div className="absolute inset-0 flex items-center justify-center text-slate-400 bg-slate-200">
+            <i className="fa-solid fa-video-slash text-4xl"></i>
           </div>
         )}
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-black/60 rounded-full text-[8px] font-bold text-white border border-white/10 uppercase tracking-tighter">
-          {user.name} (Вы)
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-1.5 bg-black/60 backdrop-blur-md rounded-full text-[10px] font-black text-white uppercase tracking-widest">
+          {user.name}
         </div>
       </div>
 
-      {/* 3. ВЕРХНЯЯ ИНФО-ПАНЕЛЬ */}
-      <div className="relative z-50 p-4 md:p-8 flex justify-between items-start pointer-events-none">
-        <div 
-          onClick={() => {
-            navigator.clipboard.writeText(user.id);
-            setCopyFeedback(true);
-            setTimeout(() => setCopyFeedback(false), 2000);
-          }}
-          className="pointer-events-auto cursor-pointer bg-black/40 backdrop-blur-xl border border-white/10 text-white px-5 py-3 rounded-2xl flex items-center gap-4 hover:bg-black/60 transition-all shadow-2xl active:scale-95"
-        >
-          <div className="flex flex-col">
-            <span className="text-[10px] font-black uppercase tracking-tighter opacity-50">{t.yourId}</span>
-            <span className="text-xl font-black tracking-widest font-mono leading-none">{user.id}</span>
-          </div>
-          <i className={`fa-solid ${copyFeedback ? 'fa-check text-emerald-400' : 'fa-copy opacity-40'}`}></i>
-        </div>
-      </div>
-
-      {/* 4. ПАНЕЛЬ УПРАВЛЕНИЯ (DOCK) - ПОДНЯТА ВЫШЕ */}
-      <div className="absolute bottom-24 md:bottom-8 left-0 right-0 z-50 px-4 md:px-0 flex flex-col items-center pointer-events-none">
-        <div className="w-full max-w-lg bg-slate-900/90 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] p-3 flex flex-col items-center gap-3 pointer-events-auto shadow-2xl">
+      {/* CONTROL DOCK - POSITIONED HIGH ENOUGH FOR MOBILE NAV */}
+      <div className="absolute bottom-32 md:bottom-12 left-0 right-0 z-[60] px-4 md:px-8 flex flex-col items-center pointer-events-none">
+        <div className="w-full max-w-lg bg-white/95 backdrop-blur-3xl border-2 border-slate-100 rounded-[3rem] p-4 flex flex-col items-center gap-5 pointer-events-auto shadow-[0_40px_80px_-15px_rgba(0,0,0,0.2)]">
           
-          {/* Поле ввода ID (только когда не в звонке) */}
+          {/* Dialer: Visible when IDLE */}
           {callStatus === 'idle' && (
-            <div className="w-full flex items-center bg-white/5 rounded-2xl p-1 border border-white/5">
-              <div className="w-10 h-10 flex items-center justify-center text-indigo-400 opacity-50 ml-2">
-                <i className="fa-solid fa-hashtag"></i>
+            <div className="w-full flex items-center bg-slate-50 rounded-[1.8rem] p-2 border-2 border-transparent focus-within:border-indigo-600/20 transition-all">
+              <div className="w-12 h-12 flex items-center justify-center text-indigo-600 ml-2">
+                <i className="fa-solid fa-hashtag text-2xl"></i>
               </div>
               <input 
                 type="text" 
                 inputMode="numeric"
                 maxLength={4}
                 placeholder={t.enterId}
-                className="flex-1 px-2 py-2 outline-none font-mono text-xl tracking-[0.3em] text-white bg-transparent placeholder:tracking-normal placeholder:font-sans placeholder:text-sm placeholder:opacity-20"
+                className="flex-1 px-2 py-2 outline-none font-mono text-3xl tracking-[0.3em] text-slate-800 bg-transparent placeholder:tracking-normal placeholder:font-sans placeholder:text-sm placeholder:text-slate-300"
                 value={targetId}
                 onChange={(e) => setTargetId(e.target.value.replace(/\D/g, ''))}
               />
               <button 
                 onClick={() => handleCall()}
                 disabled={targetId.length !== 4 || !peerReady}
-                className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-20 text-white px-6 py-3 rounded-xl font-black transition-all shadow-lg shadow-indigo-500/20 active:scale-95 flex items-center gap-2"
+                className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-20 text-white px-10 py-5 rounded-[1.5rem] font-black transition-all shadow-xl shadow-indigo-200 active:scale-95 flex items-center gap-3"
               >
                 <i className="fa-solid fa-phone"></i>
-                <span className="uppercase tracking-widest text-[10px]">{t.call}</span>
+                <span className="uppercase tracking-[0.1em] text-xs">{t.call}</span>
               </button>
             </div>
           )}
 
-          {/* Кнопки действий (Микрофон, Камера, Сброс) */}
-          <div className="flex items-center justify-center gap-4 py-1">
+          {/* Call Controls */}
+          <div className="flex items-center justify-center gap-6">
             {callStatus !== 'idle' && (
               <>
                 <button 
                   onClick={toggleMute}
-                  className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${isMuted ? 'bg-rose-500 text-white' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                  className={`w-16 h-16 rounded-[1.5rem] flex items-center justify-center transition-all ${isMuted ? 'bg-rose-500 text-white' : 'bg-slate-100 text-slate-600 shadow-inner'}`}
                 >
-                  <i className={`fa-solid ${isMuted ? 'fa-microphone-slash' : 'fa-microphone'}`}></i>
+                  <i className={`fa-solid ${isMuted ? 'fa-microphone-slash' : 'fa-microphone'} text-2xl`}></i>
                 </button>
                 <button 
                   onClick={toggleVideo}
-                  className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${isVideoOff ? 'bg-rose-500 text-white' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                  className={`w-16 h-16 rounded-[1.5rem] flex items-center justify-center transition-all ${isVideoOff ? 'bg-rose-500 text-white' : 'bg-slate-100 text-slate-600 shadow-inner'}`}
                 >
-                  <i className={`fa-solid ${isVideoOff ? 'fa-video-slash' : 'fa-video'}`}></i>
+                  <i className={`fa-solid ${isVideoOff ? 'fa-video-slash' : 'fa-video'} text-2xl`}></i>
                 </button>
               </>
             )}
 
             {callStatus === 'incoming' ? (
-              <div className="flex gap-4">
-                <button 
-                  onClick={acceptCall}
-                  className="w-14 h-14 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-lg hover:bg-emerald-400 transition-all animate-bounce"
-                >
-                  <i className="fa-solid fa-phone text-xl"></i>
+              <div className="flex gap-6">
+                <button onClick={acceptCall} className="w-20 h-20 bg-emerald-500 text-white rounded-[2rem] flex items-center justify-center shadow-2xl shadow-emerald-200 animate-bounce">
+                  <i className="fa-solid fa-phone text-3xl"></i>
                 </button>
-                <button 
-                  onClick={endCall}
-                  className="w-14 h-14 bg-red-500 text-white rounded-2xl flex items-center justify-center shadow-lg hover:bg-red-400 transition-all"
-                >
-                  <i className="fa-solid fa-phone-slash text-xl"></i>
+                <button onClick={endCall} className="w-20 h-20 bg-red-500 text-white rounded-[2rem] flex items-center justify-center shadow-2xl shadow-red-200">
+                  <i className="fa-solid fa-phone-slash text-3xl"></i>
                 </button>
               </div>
             ) : callStatus !== 'idle' ? (
               <button 
                 onClick={endCall}
-                className="px-8 h-12 md:h-14 bg-red-500 text-white rounded-2xl flex items-center justify-center gap-3 shadow-lg hover:bg-red-400 transition-all active:scale-95"
+                className="px-14 h-16 bg-red-500 text-white rounded-[1.5rem] flex items-center justify-center gap-4 shadow-xl shadow-red-200 active:scale-95"
               >
-                <i className="fa-solid fa-phone-slash text-xl"></i>
-                <span className="font-black uppercase tracking-widest text-xs">Завершить</span>
+                <i className="fa-solid fa-phone-slash text-2xl"></i>
+                <span className="font-black uppercase tracking-[0.2em] text-xs">End Call</span>
               </button>
             ) : null}
           </div>
+        </div>
+        
+        <div className="mt-4 text-[10px] font-black text-slate-300 uppercase tracking-[1em] opacity-40">
+          SECURE P2P MESH
         </div>
       </div>
     </div>
