@@ -3,36 +3,35 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Connectly App | Developed by Salmon Davronov</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
   <!-- PeerJS for Real P2P Signaling -->
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: #0f172a; /* Darker background for video-first feel */
+    :root {
+      --sat: env(safe-area-inset-top);
+      --sar: env(safe-area-inset-right);
+      --sab: env(safe-area-inset-bottom);
+      --sal: env(safe-area-inset-left);
+    }
+    html, body, #root {
+      height: 100%;
+      width: 100%;
       margin: 0;
       padding: 0;
+      background-color: #0f172a;
       overflow: hidden;
+      position: fixed;
     }
-    /* Smooth Transitions */
-    .video-fade-enter { opacity: 0; }
-    .video-fade-enter-active { opacity: 1; transition: opacity 500ms ease-in; }
-    
-    /* Hide scrollbars */
-    ::-webkit-scrollbar {
-      width: 0px;
-      background: transparent;
+    body {
+      font-family: 'Inter', sans-serif;
+      -webkit-tap-highlight-color: transparent;
     }
-    
-    /* Mobile-specific height fix */
-    .h-screen-safe {
-      height: 100vh;
-      height: -webkit-fill-available;
-    }
+    .pb-safe { padding-bottom: var(--sab); }
+    .pt-safe { padding-top: var(--sat); }
   </style>
 <script type="importmap">
 {
